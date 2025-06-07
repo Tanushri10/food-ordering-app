@@ -64,7 +64,8 @@ export default function CartScreen({ route, navigation }) {
         style={styles.orderButton}
         onPress={() =>
           navigation.navigate('OrderSummary', { cart: cartItems })
-        }>
+        }
+      >
         <Text style={styles.orderText}>Confirm Order</Text>
       </TouchableOpacity>
     </View>

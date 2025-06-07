@@ -54,7 +54,20 @@ export default function HomeScreen({ navigation }) {
   const [cart, setCart] = useState([]);
 
   const addToCart = (item) => {
-    setCart([...cart, item]);
+    // Check if item already in cart
+    const itemInCart = cart.find((cartItem) => cartItem.id === item.id);
+    if (itemInCart) {
+      // Increase quantity if exists
+      const updatedCart = cart.map((cartItem) =>
+        cartItem.id === item.id
+          ? { ...cartItem, quantity: cartItem.quantity + 1 }
+          : cartItem
+      );
+      setCart(updatedCart);
+    } else {
+      // Add new item with quantity 1
+      setCart([...cart, { ...item, quantity: 1 }]);
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -63,8 +76,9 @@ export default function HomeScreen({ navigation }) {
       <Text style={styles.name}>{item.name}</Text>
       <Text style={styles.description}>{item.description}</Text>
       <Text style={styles.price}>₹{item.price}</Text>
+
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, { backgroundColor: Colors.button }]}
         onPress={() => addToCart(item)}
       >
         <Text style={styles.buttonText}>Add to Cart</Text>
@@ -81,12 +95,17 @@ export default function HomeScreen({ navigation }) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingBottom: 100 }}
       />
-      <TouchableOpacity
-        style={[styles.button, { alignSelf: 'center', marginTop: 10 }]}
-        onPress={() => navigation.navigate('Cart', { cart })}
-      >
-        <Text style={styles.buttonText}>Go to Cart ({cart.length})</Text>
-      </TouchableOpacity>
+
+      {cart.length > 0 && (
+        <TouchableOpacity
+          style={[styles.goToCartButton, { backgroundColor: Colors.accent }]}
+          onPress={() => navigation.navigate('Cart', { cart })}
+        >
+          <Text style={[styles.buttonText, { fontSize: 18 }]}>
+            Go to Cart ({cart.length})
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -138,7 +157,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   button: {
-    backgroundColor: Colors.button,
     paddingVertical: 10,
     paddingHorizontal: 30,
     borderRadius: 20,
@@ -146,5 +164,15 @@ const styles = StyleSheet.create({
   buttonText: {
     color: Colors.buttonText,
     fontWeight: 'bold',
+  },
+  goToCartButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    paddingVertical: 15,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
