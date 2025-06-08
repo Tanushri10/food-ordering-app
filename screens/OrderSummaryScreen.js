@@ -1,100 +1,93 @@
+// OrderSummaryScreen.js
 import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { Colors } from '../styles/styles';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
+import { useNavigation } from '@react-navigation/native';
 
-export default function OrderSummaryScreen({ route }) {
-  const { cart } = route.params || [];
+const OrderSummaryScreen = ({ route }) => {
+  const { cart } = route.params;
+  const navigation = useNavigation();
 
-  const totalPrice = cart
-    ? cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    : 0;
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const renderItem = ({ item }) => (
-    <View style={styles.itemContainer}>
-      <Text style={styles.itemName}>
-        {item.name} x {item.quantity}
-      </Text>
-      <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
-    </View>
-  );
+  const handleSubmitOrder = async () => {
+    try {
+      await addDoc(collection(db, 'orders'), {
+        cartItems: cart,
+        total,
+        timestamp: Timestamp.now()
+      });
+      Alert.alert('Success', 'Order submitted!');
+      navigation.popToTop(); // or navigate to a success screen
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      Alert.alert('Error', 'Could not submit order.');
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Order Summary</Text>
-
-      {cart && cart.length > 0 ? (
-        <>
-          <FlatList
-            data={cart}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingBottom: 100 }}
-          />
-          <View style={styles.totalContainer}>
-            <Text style={styles.totalText}>Total:</Text>
-            <Text style={styles.totalPrice}>₹{totalPrice}</Text>
+      <FlatList
+        data={cart}
+        keyExtractor={(item, index) => item.id + index}
+        renderItem={({ item }) => (
+          <View style={styles.itemContainer}>
+            <Text style={styles.name}>{item.name}</Text>
+            <Text style={styles.quantity}>Qty: {item.quantity}</Text>
+            <Text style={styles.price}>₹{item.price * item.quantity}</Text>
           </View>
-        </>
-      ) : (
-        <Text style={styles.emptyText}>Your cart is empty.</Text>
-      )}
+        )}
+      />
+      <Text style={styles.total}>Total: ₹{total}</Text>
+      <TouchableOpacity style={styles.button} onPress={handleSubmitOrder}>
+        <Text style={styles.buttonText}>Confirm Order</Text>
+      </TouchableOpacity>
     </View>
   );
-}
+};
+
+export default OrderSummaryScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-    padding: 20,
+    padding: 16
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.accent,
-    textAlign: 'center',
-    marginVertical: 20,
-    fontFamily: 'Orbitron',
+    marginBottom: 16
   },
   itemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 15,
-    borderBottomColor: Colors.secondaryText,
-    borderBottomWidth: 0.5,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    paddingVertical: 8
   },
-  itemName: {
-    fontSize: 18,
-    color: Colors.text,
+  name: {
+    fontSize: 18
   },
-  itemPrice: {
-    fontSize: 18,
-    color: Colors.accent,
+  quantity: {
+    color: '#666'
+  },
+  price: {
+    fontWeight: 'bold'
+  },
+  total: {
+    fontSize: 20,
     fontWeight: 'bold',
+    marginTop: 16
   },
-  totalContainer: {
+  button: {
     marginTop: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderTopColor: Colors.accent,
-    borderTopWidth: 1,
-    paddingTop: 15,
+    backgroundColor: '#0A84FF',
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center'
   },
-  totalText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: Colors.text,
-  },
-  totalPrice: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: Colors.accent,
-  },
-  emptyText: {
-    textAlign: 'center',
-    fontSize: 18,
-    color: Colors.secondaryText,
-    marginTop: 50,
-  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16
+  }
 });
-
